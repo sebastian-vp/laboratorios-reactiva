@@ -37,4 +37,9 @@ const getThread = (id: string): Promise<ThreadAnswer> =>
 const createComment = (data: CommentData, threadId: number): Promise<Post> =>
   axios.post<Post>(`${baseUrl}/threads/${threadId}`, data).then(response => response.data)
 
-export default { getAll, create, getThread, createComment }
+// P6: actualiza un thread o comentario. La ruta es /posts/:id y sobrescribe el
+// objeto, así que hay que mandar una copia completa con el campo ya modificado.
+const update = (id: number, post: Post): Promise<Post> =>
+  axios.put<Post>(`${baseUrl}/posts/${id}`, post).then(response => response.data)
+
+export default { getAll, create, getThread, createComment, update }

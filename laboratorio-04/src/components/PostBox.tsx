@@ -3,6 +3,7 @@
 // comentario responde a otro, recibe su id y lo muestra; si no, no muestra nada.
 // P4: si recibe `to`, el contenido es un link a la vista detallada del thread.
 // P5: si recibe `onReply`, muestra un botón que despliega el formulario de respuesta.
+// P6: si recibe `onLike`/`onDislike`, muestra los botones con la cantidad actual.
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import PostForm from './PostForm'
@@ -13,9 +14,13 @@ interface PostBoxProps {
   parent?: number | null
   to?: string
   onReply?: (data: { content: string, author?: string }) => void
+  likes?: number
+  dislikes?: number
+  onLike?: () => void
+  onDislike?: () => void
 }
 
-const PostBox = ({ content, author, parent, to, onReply }: PostBoxProps) => {
+const PostBox = ({ content, author, parent, to, onReply, likes, dislikes, onLike, onDislike }: PostBoxProps) => {
   const [replying, setReplying] = useState(false)
 
   return (
@@ -23,6 +28,14 @@ const PostBox = ({ content, author, parent, to, onReply }: PostBoxProps) => {
       {to ? <Link to={to}>{content}</Link> : <p>{content}</p>}
       <small>{author ?? 'Anónimo'}</small>
       {parent ? <small>{`Responde a #${parent}`}</small> : null}
+      {onLike
+        ? (
+            <div>
+              <button onClick={onLike}>{`👍 ${likes}`}</button>
+              <button onClick={onDislike}>{`👎 ${dislikes}`}</button>
+            </div>
+          )
+        : null}
       {onReply
         ? (
             <div>

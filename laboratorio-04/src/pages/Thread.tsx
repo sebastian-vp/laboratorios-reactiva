@@ -27,10 +27,28 @@ const Thread = () => {
       setComments(prev => prev.concat(created)))
   }
 
+  // P6: guarda el thread ya modificado (los likes del thread de la vista).
+  const saveThread = (updated: Post) => {
+    threadsService.update(updated.id, updated).then(setThread)
+  }
+
+  // P6: guarda un comentario ya modificado y reemplaza su copia en el estado.
+  const saveComment = (updated: Post) => {
+    threadsService.update(updated.id, updated).then(saved =>
+      setComments(prev => prev.map(c => (c.id === saved.id ? saved : c))))
+  }
+
   return (
     <div>
       <h1>Pila Completa</h1>
-      <PostBox content={thread.content} author={thread.author} />
+      <PostBox
+        content={thread.content}
+        author={thread.author}
+        likes={thread.likes}
+        dislikes={thread.dislikes}
+        onLike={() => saveThread({ ...thread, likes: thread.likes + 1 })}
+        onDislike={() => saveThread({ ...thread, dislikes: thread.dislikes + 1 })}
+      />
       <h2>Comentarios</h2>
       <PostForm onSubmit={addComment} />
       {comments.map(comment => (
@@ -40,6 +58,10 @@ const Thread = () => {
           author={comment.author}
           parent={comment.parent}
           onReply={data => addComment({ ...data, parent: comment.id })}
+          likes={comment.likes}
+          dislikes={comment.dislikes}
+          onLike={() => saveComment({ ...comment, likes: comment.likes + 1 })}
+          onDislike={() => saveComment({ ...comment, dislikes: comment.dislikes + 1 })}
         />
       ))}
     </div>

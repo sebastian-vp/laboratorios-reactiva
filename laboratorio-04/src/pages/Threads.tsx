@@ -18,6 +18,12 @@ const Threads = () => {
       setThreads(prev => prev.concat(created)))
   }
 
+  // P6: guarda el thread ya modificado y reemplaza su copia en el estado.
+  const save = (updated: Post) => {
+    threadsService.update(updated.id, updated).then(saved =>
+      setThreads(prev => prev.map(t => (t.id === saved.id ? saved : t))))
+  }
+
   return (
     <div>
       <h1>Pila Completa</h1>
@@ -28,6 +34,10 @@ const Threads = () => {
           content={thread.content}
           author={thread.author}
           to={`/${thread.id}`}
+          likes={thread.likes}
+          dislikes={thread.dislikes}
+          onLike={() => save({ ...thread, likes: thread.likes + 1 })}
+          onDislike={() => save({ ...thread, dislikes: thread.dislikes + 1 })}
         />
       ))}
     </div>
