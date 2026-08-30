@@ -19,6 +19,7 @@ const Threads = () => {
           key={thread.id}
           content={thread.content}
           author={thread.author}
+          to={`/${thread.id}`}
         />
       ))}
     </div>
