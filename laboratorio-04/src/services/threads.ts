@@ -1,4 +1,4 @@
-// P2: módulo para comunicarse con el servidor (corre en localhost:3001).
+// P2 y P3: módulo para comunicarse con el servidor (corre en localhost:3001).
 import axios from 'axios'
 import type { Post } from '../types/posts'
 
@@ -9,6 +9,17 @@ interface ThreadData {
   author?: string
 }
 
+interface CommentData {
+  content: string
+  author?: string
+  parent?: number
+}
+
+interface ThreadAnswer {
+  thread: Post
+  comments: Post[]
+}
+
 // Lista todos los threads.
 const getAll = (): Promise<Post[]> =>
   axios.get<Post[]>(`${baseUrl}/threads`).then(response => response.data)
@@ -17,4 +28,13 @@ const getAll = (): Promise<Post[]> =>
 const create = (data: ThreadData): Promise<Post> =>
   axios.post<Post>(`${baseUrl}/threads`, data).then(response => response.data)
 
-export default { getAll, create }
+// Obtiene un thread junto a su listado de comentarios.
+const getThread = (id: string): Promise<ThreadAnswer> =>
+  axios.get<ThreadAnswer>(`${baseUrl}/threads/${id}`).then(response => response.data)
+
+// Crea un comentario dentro de un thread. parent es el id del comentario al que
+// responde, y debe pertenecer al mismo thread.
+const createComment = (data: CommentData, threadId: number): Promise<Post> =>
+  axios.post<Post>(`${baseUrl}/threads/${threadId}`, data).then(response => response.data)
+
+export default { getAll, create, getThread, createComment }
