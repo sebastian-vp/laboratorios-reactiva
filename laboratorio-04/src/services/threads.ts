@@ -1,62 +1,20 @@
-// P2, P3 y P5: módulo para comunicarse con el servidor.
-//
-// El servidor de datos corre en http://localhost:3001 (`npm run server`) y
-// expone estos endpoints:
-//
-//   GET  /threads      -> Post[]                      listado de threads
-//   POST /threads      -> Post                         crea un thread
-//   GET  /threads/:id  -> { thread, comments }         un thread y sus comentarios
-//   POST /threads/:id  -> Post                         crea un comentario en el thread
-//   PUT  /posts/:id    -> Post                         sobrescribe un thread o comentario
-//
-// Cada función debe declarar el tipo de sus argumentos y el de su retorno.
-//
-// import axios from 'axios'
-// import type { Post } from '../types/posts'
-//
-// const baseUrl = 'http://localhost:3001/threads'
+// P2: módulo para comunicarse con el servidor (corre en localhost:3001).
+import axios from 'axios'
+import type { Post } from '../types/posts'
 
-// P2: obtener el listado de threads.
-//
-// const getAll = () => { ... }
+const baseUrl = 'http://localhost:3001'
 
-// P2: crear un thread. El servidor solo necesita el contenido y, si lo hay,
-// el autor; del resto de los campos se encarga él.
-//
-// interface ThreadCreateData {
-//   content: string
-//   author?: string
-// }
-// const create = (data: ThreadCreateData) => { ... }
+interface ThreadData {
+  content: string
+  author?: string
+}
 
-// P3: obtener un thread junto a sus comentarios.
-//
-// interface ThreadAnswer {
-//   thread: Post
-//   comments: Post[]
-// }
-// const getThread = (id: string) => { ... }
+// Lista todos los threads.
+const getAll = (): Promise<Post[]> =>
+  axios.get<Post[]>(`${baseUrl}/threads`).then(response => response.data)
 
-// P3: crear un comentario dentro de un thread. `parent` es el id del
-// comentario al que responde, y debe pertenecer al mismo thread.
-//
-// interface CommentCreateData {
-//   content: string
-//   author?: string
-//   parent?: number
-// }
-// const createComment = (data: CommentCreateData, threadId: number) => { ... }
+// Crea un thread. El servidor solo necesita contenido y, si lo hay, autor.
+const create = (data: ThreadData): Promise<Post> =>
+  axios.post<Post>(`${baseUrl}/threads`, data).then(response => response.data)
 
-// P5: actualizar un thread o comentario. Ojo con la ruta: es /posts/:id, no
-// /threads/:id. El endpoint sobrescribe el objeto, así que hay que mandar una
-// copia completa con el campo ya modificado.
-//
-// const update = (id: number, newObject: Post) => { ... }
-
-// export default {
-//   getAll,
-//   create,
-//   getThread,
-//   createComment,
-//   update,
-// }
+export default { getAll, create }
