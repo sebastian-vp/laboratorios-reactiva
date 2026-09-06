@@ -83,6 +83,28 @@ app.post("/api/threads/:id", async (request, response) => {
   response.status(201).json(saved);
 });
 
+// PUT: actualizar (sobrescribir) un post — thread o comentario
+app.put("/api/posts/:id", async (request, response) => {
+  const id = Number(request.params.id);
+  const { content, author, likes, dislikes, thread, parent } = request.body;
+
+  const post = await Post.findOne({ id });
+  if (!post) {
+    response.status(404).json({ error: "post not found" });
+    return;
+  }
+
+  post.content = content;
+  post.author = author;
+  post.likes = likes;
+  post.dislikes = dislikes;
+  post.thread = thread;
+  post.parent = parent;
+
+  const saved = await post.save();
+  response.json(saved);
+});
+
 const errorHandler = (error: Error, _request: Request, response: Response, next: NextFunction) => {
   console.error(error.message);
 

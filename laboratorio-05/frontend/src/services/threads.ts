@@ -36,7 +36,7 @@ const createComment = (data: CommentCreateData, threadId: number) => {
 
 const update = (id: number, newObject: Post) => {
   return axios
-    .put<Post>(`/posts/${id}`, newObject)
+    .put<Post>(`/api/posts/${id}`, newObject)
     .then(request => request.data)
 }
 
