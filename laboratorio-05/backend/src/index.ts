@@ -1,4 +1,4 @@
-import express from "express";
+import express, { type NextFunction, type Request, type Response } from "express";
 import mongoose from "mongoose";
 import { Post } from "./models/post.ts";
 
@@ -82,6 +82,19 @@ app.post("/api/threads/:id", async (request, response) => {
   const saved = await comment.save();
   response.status(201).json(saved);
 });
+
+const errorHandler = (error: Error, _request: Request, response: Response, next: NextFunction) => {
+  console.error(error.message);
+
+  if (error.name === "ValidationError") {
+    response.status(400).json({ error: error.message });
+    return;
+  }
+
+  next(error);
+};
+
+app.use(errorHandler);
 
 app.listen(3001, () => {
   console.log("Server running on port 3001");
