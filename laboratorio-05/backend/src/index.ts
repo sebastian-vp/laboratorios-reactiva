@@ -1,14 +1,17 @@
+import "dotenv/config";
 import express, { type NextFunction, type Request, type Response } from "express";
 import mongoose from "mongoose";
+import path from "node:path";
 import { Post } from "./models/post.ts";
 
 mongoose.set("strictQuery", false);
-mongoose.connect("mongodb://127.0.0.1:27017/lab5")
+mongoose.connect(process.env.MONGODB_URI as string, { dbName: process.env.MONGODB_DBNAME as string })
   .then(() => console.log("Conectado a MongoDB"))
   .catch((error) => console.log("Error conectando a MongoDB:", error.message));
 
 const app = express();
 app.use(express.json());
+app.use(express.static("dist"));
 
 // GET: devolver todos los threads
 app.get("/api/threads", async (_request, response) => {
@@ -105,6 +108,14 @@ app.put("/api/posts/:id", async (request, response) => {
   response.json(saved);
 });
 
+app.use((request, response, next) => {
+  if (request.method === "GET" && !request.path.startsWith("/api")) {
+    response.sendFile(path.resolve("dist/index.html"));
+  } else {
+    next();
+  }
+});
+
 const errorHandler = (error: Error, _request: Request, response: Response, next: NextFunction) => {
   console.error(error.message);
 
@@ -118,6 +129,7 @@ const errorHandler = (error: Error, _request: Request, response: Response, next:
 
 app.use(errorHandler);
 
-app.listen(3001, () => {
-  console.log("Server running on port 3001");
+const PORT = process.env.PORT || 3001;
+app.listen(PORT, () => {
+  console.log(`Server running on port ${PORT}`);
 });
