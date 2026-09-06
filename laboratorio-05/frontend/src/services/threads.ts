@@ -1,10 +1,10 @@
 import axios from 'axios'
 import type { Post } from '../types/posts'
 
-const baseUrl = `/threads`
+const baseUrl = `/api/threads`
 
 const getAll = () => {
-  const request = axios.get<Post[]>(`${baseUrl}/`)
+  const request = axios.get<Post[]>(`${baseUrl}`)
   return request.then(response => response.data)
 }
 
