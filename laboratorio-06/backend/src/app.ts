@@ -19,81 +19,119 @@ const requestLogger = (
 };
 app.use(requestLogger);
 
-app.get("/api/threads", (request, response) => {
-  PostModel.find({ thread: null }).then((posts) => {
+app.get("/api/threads", async (request, response, next) => {
+  try {
+    const posts = await PostModel.find({ thread: null });
     response.json(posts);
-  });
+  } catch (error) {
+    next(error);
+  }
 });
 
-app.get("/api/threads/:id", (request, response, next) => {
-  const id = request.params.id;
-  const thread = PostModel.findById(id);
-  const posts = PostModel.find({ thread: id });
-  Promise.all([thread, posts])
-    .then(([thread, posts]) => {
-      if (thread) {
-        if (thread.thread !== null) {
-          return response.status(400).json({ error: "Not a thread" });
-        }
-
-        response.json({ thread: thread, comments: posts });
-      } else {
-        response.status(404).end();
+app.get("/api/threads/:id", async (request, response, next) => {
+  try {
+    const id = request.params.id;
+    const [thread, posts] = await Promise.all([
+      PostModel.findById(id),
+      PostModel.find({ thread: id }),
+    ]);
+    if (thread) {
+      if (thread.thread !== null) {
+        return response.status(400).json({ error: "Not a thread" });
       }
-    })
-    .catch((error) => next(error));
+
+      response.json({ thread: thread, comments: posts });
+    } else {
+      response.status(404).end();
+    }
+  } catch (error) {
+    next(error);
+  }
 });
 
-app.post("/api/threads", (request, response, next) => {
-  const body = request.body;
+app.post("/api/threads", async (request, response, next) => {
+  try {
+    const body = request.body;
 
-  const post = new PostModel({
-    content: body.content,
-    author: body.author,
-    thread: null,
-  });
+    const post = new PostModel({
+      content: body.content,
+      author: body.author,
+      thread: null,
+    });
 
-  post.save()
-    .then((savedPost) => {
-      response.status(201).json(savedPost);
-    })
-    .catch((error) => next(error));
+    const savedPost = await post.save();
+    response.status(201).json(savedPost);
+  } catch (error) {
+    next(error);
+  }
 });
 
-app.post("/api/threads/:id", (request, response, next) => {
-  const body = request.body;
-  const threadId = request.params.id;
+// --- INICIO CAMBIO P5: Validación de existencia del thread y pertenencia del parent al crear comentario ---
+app.post("/api/threads/:id", async (request, response, next) => {
+  try {
+    const body = request.body;
+    const threadId = request.params.id;
 
-  console.log(request.params)
+    const thread = await PostModel.findById(threadId);
+    if (!thread || thread.thread !== null) {
+      return response.status(404).json({ error: "Thread not found" });
+    }
 
-  const post = new PostModel({
-    content: body.content,
-    author: body.author,
-    thread: threadId,
-    parent: body.parent,
-  });
-
-  post.save()
-    .then((savedPost) => {
-      response.status(201).json(savedPost);
-    })
-    .catch((error) => next(error));
-});
-
-app.put("/api/posts/:id", (request, response, next) => {
-  const body = request.body;
-  const id = request.params.id;
-
-  PostModel.findByIdAndUpdate(id, body, { new: true })
-    .then((updatedPost) => {
-      if (updatedPost) {
-        response.json(updatedPost);
-      } else {
-        response.status(404).end();
+    if (body.parent !== undefined && body.parent !== null) {
+      const parentPost = await PostModel.findById(body.parent);
+      if (!parentPost || parentPost.thread?.toString() !== threadId) {
+        return response
+          .status(400)
+          .json({ error: "Parent comment does not belong to this thread" });
       }
-    })
-    .catch((error) => next(error));
+    }
+
+    const post = new PostModel({
+      content: body.content,
+      author: body.author,
+      thread: threadId,
+      parent: body.parent ?? null,
+    });
+
+    const savedPost = await post.save();
+    response.status(201).json(savedPost);
+  } catch (error) {
+    next(error);
+  }
 });
+// --- FIN CAMBIO P5 ---
+
+// --- INICIO CAMBIO P6: Habilitación de runValidators en PUT /api/posts/:id ---
+app.put("/api/posts/:id", async (request, response, next) => {
+  try {
+    const body = request.body;
+    const id = request.params.id;
+
+    const updatedPost = await PostModel.findByIdAndUpdate(id, body, {
+      new: true,
+      runValidators: true,
+      context: "query",
+    });
+
+    if (updatedPost) {
+      response.json(updatedPost);
+    } else {
+      response.status(404).end();
+    }
+  } catch (error) {
+    next(error);
+  }
+});
+// --- FIN CAMBIO P6 ---
+
+app.use(express.static("dist"));
+
+// --- INICIO CAMBIO P3: Middleware unknownEndpoint (404 JSON) y orden correcto de middlewares ---
+const unknownEndpoint = (request: Request, response: Response) => {
+  response.status(404).json({ error: "unknown endpoint" });
+};
+
+app.use(unknownEndpoint);
 
 const errorHandler = (
   error: { name: string; message: string },
@@ -102,17 +140,16 @@ const errorHandler = (
   next: NextFunction
 ) => {
   console.error(error.message);
-
   console.error(error.name);
   if (error.name === "CastError") {
-    response.status(400).send({ error: "malformatted id" });
+    return response.status(400).send({ error: "malformatted id" });
   } else if (error.name === "ValidationError") {
-    response.status(400).json({ error: error.message });
+    return response.status(400).json({ error: error.message });
   }
   next(error);
 };
 
 app.use(errorHandler);
-app.use(express.static("dist"));
+// --- FIN CAMBIO P3 ---
 
 export default app;
